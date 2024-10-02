@@ -1,5 +1,11 @@
-varying vec2 vUv;
+#version 300 es
+precision highp float;
+
+uniform sampler2D texture;
+in vec2 vUv;
+out vec4 fragColor;
+
 void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 color = texture(texture, vUv);
+    fragColor = color;
 }
