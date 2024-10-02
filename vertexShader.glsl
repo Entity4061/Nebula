@@ -1,11 +1,14 @@
 #version 300 es
 precision highp float;
 
-uniform sampler2D texture;
-in vec2 vUv;
-out vec4 fragColor;
+in vec3 position;
+in vec2 uv;
+out vec2 vUv;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
 
 void main() {
-    vec4 color = texture(texture, vUv);
-    fragColor = color;
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
