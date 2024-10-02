@@ -32,12 +32,11 @@
         varying vec2 vUv;
         varying vec3 vPosition;
 
-        // 2D noise function for generating gaseous patterns
+        // Noise function for gaseous look
         float noise(vec2 uv) {
             return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
         }
 
-        // Smoother version of noise with turbulence
         float smoothNoise(vec2 uv) {
             vec2 i = floor(uv);
             vec2 f = fract(uv);
@@ -51,16 +50,16 @@
         }
 
         void main() {
-            // Basic texture
+            // Get texture color
             vec4 texColor = texture2D(texture, vUv);
 
-            // Adding noise-based gas pattern
-            float n = smoothNoise(vUv * 5.0 + time * 0.01); // Use 'time' for dynamic flow
-            vec3 color = texColor.rgb * vec3(n + 0.8); // Add noise to the texture to simulate gas
+            // Generate noise pattern for gas effect
+            float n = smoothNoise(vUv * 5.0 + time * 0.01); // Animate with 'time'
+            vec3 color = texColor.rgb * vec3(n + 0.8); // Add noise for gas-like effect
 
-            // Apply glow and opacity for realistic nebula effect
+            // Simulate glow and opacity for realistic nebula effect
             float intensity = smoothstep(0.2, 0.8, length(vPosition) * 0.5);
-            gl_FragColor = vec4(color * intensity, texColor.a * 0.7); // Final color with glow
+            gl_FragColor = vec4(color * intensity, texColor.a * 0.7);
         }
     </script>
 
@@ -72,17 +71,17 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Orbit Controls for navigation
+        // Orbit Controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.enableZoom = true;
 
-        // Load a high-res texture for the nebula
+        // Load nebula texture
         const textureLoader = new THREE.TextureLoader();
-        const nebulaTexture = textureLoader.load('/path/to/your/high-res-nebula.png');
+        const nebulaTexture = textureLoader.load('high-res-nebula.jpg');  // Use a high-res texture
 
-        // Shader Material
+        // Create Shader Material
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 texture: { value: nebulaTexture },
@@ -94,12 +93,12 @@
             blending: THREE.AdditiveBlending
         });
 
-        // Nebula geometry (using multiple layers for depth effect)
+        // Nebula geometry
         const geometry = new THREE.SphereGeometry(10, 64, 64);
         const nebula = new THREE.Mesh(geometry, material);
         scene.add(nebula);
 
-        // Add more layers with slight variations for a more complex look
+        // Extra layers for realism
         const nebula2 = nebula.clone();
         nebula2.scale.set(1.2, 1.2, 1.2);
         scene.add(nebula2);
@@ -113,19 +112,17 @@
         pointLight.position.set(15, 15, 15);
         scene.add(pointLight);
 
-        // Camera position
         camera.position.z = 30;
 
         // Animate the scene
         function animate() {
             requestAnimationFrame(animate);
 
-            // Rotate layers at different speeds for a dynamic effect
+            // Rotate layers for dynamic effect
             nebula.rotation.y += 0.002;
             nebula2.rotation.y += 0.0015;
             nebula3.rotation.y += 0.001;
 
-            // Update the shader's time uniform for dynamic gas patterns
             material.uniforms.time.value += 0.05;
 
             controls.update();
