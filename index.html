@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Nebula</title>
+    <title>3D Spinning Nebula</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
     </style>
 </head>
 <body>
-    <script src="three.js"></script>
-    <script src="OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
     <script>
         // Scene setup
@@ -21,28 +21,45 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add nebula texture
-        const textureLoader = new THREE.TextureLoader();
-        const nebulaTexture = textureLoader.load('butterfly_nebula.png'); // Link to the uploaded nebula image
-
-        const geometry = new THREE.SphereGeometry(5, 64, 64);
-        const material = new THREE.MeshBasicMaterial({
-            map: nebulaTexture,
-            side: THREE.DoubleSide,
+        // Color scheme: Purple Nebula
+        const nebulaColor = new THREE.Color(0x9b59b6); // Purple color
+        const particleMaterial = new THREE.PointsMaterial({
+            color: nebulaColor,
+            size: 0.1,
             transparent: true,
-            opacity: 0.9
+            opacity: 0.8
         });
 
-        const nebula = new THREE.Mesh(geometry, material);
+        // Geometry for the nebula shape
+        const nebulaGeometry = new THREE.BufferGeometry();
+        const nebulaParticles = 10000;  // Number of particles for nebula
+
+        const positions = new Float32Array(nebulaParticles * 3); // x, y, z for each particle
+
+        for (let i = 0; i < nebulaParticles; i++) {
+            const x = (Math.random() - 0.5) * 20;  // Spread particles over a volume
+            const y = (Math.random() - 0.5) * 20;
+            const z = (Math.random() - 0.5) * 20;
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+        }
+
+        nebulaGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const nebula = new THREE.Points(nebulaGeometry, particleMaterial);
         scene.add(nebula);
 
-        camera.position.z = 10;
+        camera.position.z = 25;
 
-        // Add lighting (optional, for a glowing effect)
+        // Lighting
         const ambientLight = new THREE.AmbientLight(0x404040);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xaaaaaa, 1, 100);
-        pointLight.position.set(50, 50, 50);
+
+        // Add point light for slight glow effect
+        const pointLight = new THREE.PointLight(0x999999, 1, 100);
+        pointLight.position.set(20, 20, 20);
         scene.add(pointLight);
 
         // Controls for interaction
@@ -51,7 +68,8 @@
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            nebula.rotation.y += 0.002; // Slow rotation effect
+            nebula.rotation.y += 0.001;  // Slow rotation effect
+            nebula.rotation.x += 0.001;  // Rotate around another axis too
             controls.update();
             renderer.render(scene, camera);
         }
