@@ -32,8 +32,8 @@
             const starTexture = textureLoader.load('star.jpg'); // Replace with your local file path
 
             // Load shaders
-            const vertexShaderText = await loadShader('shaders/vertexShader.glsl');
-            const fragmentShaderText = await loadShader('shaders/fragmentShader.glsl');
+            const vertexShaderText = await loadShader('vertexShader.glsl');
+            const fragmentShaderText = await loadShader('fragmentShader.glsl');
 
             // Create a sphere and apply the nebula texture
             const geometry = new THREE.SphereGeometry(5, 64, 64);
