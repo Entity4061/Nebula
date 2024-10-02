@@ -20,27 +20,16 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Create a procedural noise texture for the nebula
-        const size = 512;
-        const data = new Uint8Array(size * size * 4);
-        const simplex = new SimplexNoise();
-        for (let i = 0; i < size * size; i++) {
-            const x = i % size;
-            const y = Math.floor(i / size);
-            const value = (simplex.noise2D(x / 100, y / 100) + 1) * 128;
-            data[i * 4] = value;
-            data[i * 4 + 1] = value;
-            data[i * 4 + 2] = value;
-            data[i * 4 + 3] = 255;
-        }
-        const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
-        texture.needsUpdate = true;
+        // Load nebula texture
+        const textureLoader = new THREE.TextureLoader();
+        const nebulaTexture = textureLoader.load('nebula.jpg'); // Replace with your local file path
+        const starTexture = textureLoader.load('star.png'); // Replace with your local file path
 
-        // Create a sphere and apply the procedural texture
+        // Create a sphere and apply the nebula texture
         const geometry = new THREE.SphereGeometry(5, 64, 64);
         const material = new THREE.ShaderMaterial({
             uniforms: {
-                texture: { value: texture }
+                texture: { value: nebulaTexture }
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -78,7 +67,7 @@
         }
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const particlesMaterial = new THREE.PointsMaterial({
-            map: texture,
+            map: starTexture,
             size: 0.5,
             transparent: true,
             opacity: 0.8,
