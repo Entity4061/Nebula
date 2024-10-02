@@ -3,97 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Rotating Nebula</title>
+    <title>3D Nebula</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
     </style>
 </head>
 <body>
-    <script src="three.js"></script>
-    <script src="simplex-noise.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
     <script>
-        async function loadShader(url) {
-            const response = await fetch(url);
-            return await response.text();
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add nebula texture
+        const textureLoader = new THREE.TextureLoader();
+        const nebulaTexture = textureLoader.load('/mnt/data/butterfly_nebula.png'); // Link to the uploaded nebula image
+
+        const geometry = new THREE.SphereGeometry(5, 64, 64);
+        const material = new THREE.MeshBasicMaterial({
+            map: nebulaTexture,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        const nebula = new THREE.Mesh(geometry, material);
+        scene.add(nebula);
+
+        camera.position.z = 10;
+
+        // Add lighting (optional, for a glowing effect)
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xaaaaaa, 1, 100);
+        pointLight.position.set(50, 50, 50);
+        scene.add(pointLight);
+
+        // Controls for interaction
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            nebula.rotation.y += 0.002; // Slow rotation effect
+            controls.update();
+            renderer.render(scene, camera);
         }
 
-        async function init() {
-            // Set up the scene, camera, and renderer
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer();
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            // Load nebula texture
-            const textureLoader = new THREE.TextureLoader();
-            const nebulaTexture = textureLoader.load('nebula.jpg'); // Replace with your local file path
-            const starTexture = textureLoader.load('star.jpg'); // Replace with your local file path
-
-            // Load shaders
-            const vertexShaderText = await loadShader('shaders/vertexShader.glsl');
-            const fragmentShaderText = await loadShader('shaders/fragmentShader.glsl');
-
-            // Create a sphere and apply the nebula texture
-            const geometry = new THREE.SphereGeometry(5, 64, 64);
-            const material = new THREE.ShaderMaterial({
-                uniforms: {
-                    texture: { value: nebulaTexture }
-                },
-                vertexShader: vertexShaderText,
-                fragmentShader: fragmentShaderText
-            });
-            const nebula = new THREE.Mesh(geometry, material);
-            scene.add(nebula);
-
-            // Add lighting
-            const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
-            scene.add(ambientLight);
-
-            const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-            pointLight.position.set(10, 10, 10);
-            scene.add(pointLight);
-
-            // Add particle system for extra realism
-            const particlesGeometry = new THREE.BufferGeometry();
-            const particlesCount = 10000;
-            const positions = new Float32Array(particlesCount * 3);
-            for (let i = 0; i < particlesCount * 3; i++) {
-                positions[i] = (Math.random() - 0.5) * 100;
-            }
-            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const particlesMaterial = new THREE.PointsMaterial({
-                map: starTexture,
-                size: 0.5,
-                transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending
-            });
-            const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-            scene.add(particles);
-
-            // Position the camera
-            camera.position.z = 20;
-
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-                nebula.rotation.y += 0.001; // Slow rotation
-                particles.rotation.y += 0.001; // Rotate particles
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
-
-        init();
+        });
     </script>
 </body>
 </html>
