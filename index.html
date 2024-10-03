@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Red Giant to Nebula</title>
+    <title>Star Lifecycle Animation</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -11,6 +11,7 @@
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
     <script>
         // Scene setup
         const scene = new THREE.Scene();
@@ -19,36 +20,108 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Create a sphere to represent the super red giant
-        const geometry = new THREE.SphereGeometry(1, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const star = new THREE.Mesh(geometry, material);
-        scene.add(star);
-
-        // Create a particle system to represent the nebula
-        const particles = new THREE.BufferGeometry();
-        const particleCount = 1000;
+        // Nebula particles
+        const nebulaParticles = new THREE.BufferGeometry();
+        const particleCount = 2000;
         const positions = new Float32Array(particleCount * 3);
         for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 10;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+            positions[i * 3] = (Math.random() - 0.5) * 20;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
         }
-        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        const particleMaterial = new THREE.PointsMaterial({ color: 0x888888 });
-        const nebula = new THREE.Points(particles, particleMaterial);
+        nebulaParticles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.1 });
+        const nebula = new THREE.Points(nebulaParticles, particleMaterial);
         scene.add(nebula);
 
-        camera.position.z = 5;
+        // Super red giant
+        const starGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const starMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const star = new THREE.Mesh(starGeometry, starMaterial);
+        scene.add(star);
+        star.visible = false;
+
+        // Earth
+        const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const earthMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+        scene.add(earth);
+        earth.visible = false;
+
+        camera.position.z = 30;
 
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            star.rotation.y += 0.01;
-            nebula.rotation.y += 0.01;
+            TWEEN.update();
+            nebula.rotation.y += 0.001;
+            star.rotation.y += 0.001;
+            earth.rotation.y += 0.001;
             renderer.render(scene, camera);
         }
         animate();
+
+        // Transition functions
+        function showSuperRedGiant() {
+            new TWEEN.Tween(nebula.material)
+                .to({ opacity: 0 }, 2000)
+                .onComplete(() => {
+                    nebula.visible = false;
+                    star.visible = true;
+                    new TWEEN.Tween(star.scale)
+                        .to({ x: 5, y: 5, z: 5 }, 2000)
+                        .start();
+                })
+                .start();
+        }
+
+        function zoomIntoStar() {
+            new TWEEN.Tween(camera.position)
+                .to({ z: 5 }, 2000)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onComplete(showAtomicInteractions)
+                .start();
+        }
+
+        function showAtomicInteractions() {
+            // Placeholder for atomic interactions
+            console.log("Showing atomic interactions...");
+        }
+
+        function showEarthExpansion() {
+            star.visible = false;
+            earth.visible = true;
+            new TWEEN.Tween(earth.scale)
+                .to({ x: 2, y: 2, z: 2 }, 2000)
+                .start();
+        }
+
+        function showSupernova() {
+            earth.visible = false;
+            star.visible = true;
+            new TWEEN.Tween(star.scale)
+                .to({ x: 10, y: 10, z: 10 }, 2000)
+                .onComplete(() => {
+                    star.visible = false;
+                    nebula.visible = true;
+                    new TWEEN.Tween(nebula.material)
+                        .to({ opacity: 1 }, 2000)
+                        .start();
+                })
+                .start();
+        }
+
+        function showNebulaFormation() {
+            // Placeholder for nebula formation
+            console.log("Showing nebula formation...");
+        }
+
+        // Example sequence
+        setTimeout(showSuperRedGiant, 2000);
+        setTimeout(zoomIntoStar, 4000);
+        setTimeout(showEarthExpansion, 6000);
+        setTimeout(showSupernova, 8000);
+        setTimeout(showNebulaFormation, 10000);
     </script>
 </body>
 </html>
