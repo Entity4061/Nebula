@@ -42,7 +42,7 @@
         scene.add(directionalLight);
 
         // Particle system
-        const particleCount = 40000; // Increased particle count for higher density
+        const particleCount = 40000;
         const particles = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
@@ -64,16 +64,12 @@
         }
 
         for (let i = 0; i < particleCount; i++) {
-            const layer = Math.floor(i / (particleCount / 5));
             const angle = Math.random() * 2 * Math.PI;
-            const radius = Math.random() * 50 + layer * 20;
-            let height;
-
-            // Irregular shell-like structure
-            height = (Math.sin(angle * 3 + layer) * 10 + Math.random() * 5) * (Math.random() > 0.5 ? 1 : -1);
+            const radius = Math.random() * 100;
+            const height = (Math.random() - 0.5) * 20;
 
             positions[i * 3] = radius * Math.cos(angle);
-            positions[i * 3 + 1] = height + layer * 20;
+            positions[i * 3 + 1] = height;
             positions[i * 3 + 2] = radius * Math.sin(angle);
 
             const ratio = i / particleCount;
@@ -92,17 +88,28 @@
         particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
+        // Load a texture for the particles
+        const textureLoader = new THREE.TextureLoader();
+        const particleTexture = textureLoader.load('https://threejs.org/examples/textures/sprites/disc.png');
+
         const particleMaterial = new THREE.PointsMaterial({
             size: 1,
             vertexColors: true,
             transparent: true,
-            opacity: 0.9, // Increased opacity for more brightness
+            opacity: 0.9,
             blending: THREE.AdditiveBlending,
-            depthTest: false
+            depthTest: false,
+            map: particleTexture
         });
 
         const particleSystem = new THREE.Points(particles, particleMaterial);
         scene.add(particleSystem);
+
+        // Bright sphere in the center
+        const sphereGeometry = new THREE.SphereGeometry(10, 32, 32);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        scene.add(sphere);
 
         camera.position.z = 200;
 
@@ -110,9 +117,9 @@
         const composer = new THREE.EffectComposer(renderer);
         composer.addPass(new THREE.RenderPass(scene, camera));
 
-        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85); // Further reduced bloom strength
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85);
         bloomPass.threshold = 0;
-        bloomPass.strength = 1.0; // Further reduced bloom strength
+        bloomPass.strength = 1.0;
         bloomPass.radius = 0;
         composer.addPass(bloomPass);
 
