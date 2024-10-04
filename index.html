@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Lifecycle Animation</title>
+    <title>Supernova Remnant Particle System</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        body {
+            background: radial-gradient(circle at center, #000000, #1a1a1a, #333333, #4d4d4d, #666666);
+        }
     </style>
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script>
         // Scene setup
         const scene = new THREE.Scene();
@@ -20,108 +30,103 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Nebula particles
-        const nebulaParticles = new THREE.BufferGeometry();
-        const particleCount = 2000;
-        const positions = new Float32Array(particleCount * 3);
-        for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 20;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-        }
-        nebulaParticles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        const particleMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.1 });
-        const nebula = new THREE.Points(nebulaParticles, particleMaterial);
-        scene.add(nebula);
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // Super red giant
-        const starGeometry = new THREE.SphereGeometry(1, 32, 32);
-        const starMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const star = new THREE.Mesh(starGeometry, starMaterial);
-        scene.add(star);
-        star.visible = false;
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
 
-        // Earth
-        const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-        const earthMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-        scene.add(earth);
-        earth.visible = false;
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
 
-        camera.position.z = 30;
+        // Load the image and create particles
+        const img = new Image();
+        img.src = 'https://upload.wikimedia.org/wikipedia/commons/a/a2/SN1994D.jpg';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            context.drawImage(img, 0, 0, img.width, img.height);
 
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            TWEEN.update();
-            nebula.rotation.y += 0.001;
-            star.rotation.y += 0.001;
-            earth.rotation.y += 0.001;
-            renderer.render(scene, camera);
-        }
-        animate();
+            const imageData = context.getImageData(0, 0, img.width, img.height);
+            const data = imageData.data;
 
-        // Transition functions
-        function showSuperRedGiant() {
-            new TWEEN.Tween(nebula.material)
-                .to({ opacity: 0 }, 2000)
-                .onComplete(() => {
-                    nebula.visible = false;
-                    star.visible = true;
-                    new TWEEN.Tween(star.scale)
-                        .to({ x: 5, y: 5, z: 5 }, 2000)
-                        .start();
-                })
-                .start();
-        }
+            const particleCount = img.width * img.height;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
 
-        function zoomIntoStar() {
-            new TWEEN.Tween(camera.position)
-                .to({ z: 5 }, 2000)
-                .easing(TWEEN.Easing.Quadratic.InOut)
-                .onComplete(showAtomicInteractions)
-                .start();
-        }
+            let index = 0;
+            for (let y = 0; y < img.height; y++) {
+                for (let x = 0; x < img.width; x++) {
+                    const i = (y * img.width + x) * 4;
+                    const r = data[i] / 255;
+                    const g = data[i + 1] / 255;
+                    const b = data[i + 2] / 255;
+                    const a = data[i + 3] / 255;
 
-        function showAtomicInteractions() {
-            // Placeholder for atomic interactions
-            console.log("Showing atomic interactions...");
-        }
+                    if (a > 0.5) { // Only use pixels with significant opacity
+                        positions[index * 3] = (x - img.width / 2) / 2;
+                        positions[index * 3 + 1] = (img.height / 2 - y) / 2;
+                        positions[index * 3 + 2] = 0;
 
-        function showEarthExpansion() {
-            star.visible = false;
-            earth.visible = true;
-            new TWEEN.Tween(earth.scale)
-                .to({ x: 2, y: 2, z: 2 }, 2000)
-                .start();
-        }
+                        colors[index * 3] = r;
+                        colors[index * 3 + 1] = g;
+                        colors[index * 3 + 2] = b;
 
-        function showSupernova() {
-            earth.visible = false;
-            star.visible = true;
-            new TWEEN.Tween(star.scale)
-                .to({ x: 10, y: 10, z: 10 }, 2000)
-                .onComplete(() => {
-                    star.visible = false;
-                    nebula.visible = true;
-                    new TWEEN.Tween(nebula.material)
-                        .to({ opacity: 1 }, 2000)
-                        .start();
-                })
-                .start();
-        }
+                        sizes[index] = Math.random() * 1.5;
 
-        function showNebulaFormation() {
-            // Placeholder for nebula formation
-            console.log("Showing nebula formation...");
-        }
+                        index++;
+                    }
+                }
+            }
 
-        // Example sequence
-        setTimeout(showSuperRedGiant, 2000);
-        setTimeout(zoomIntoStar, 4000);
-        setTimeout(showEarthExpansion, 6000);
-        setTimeout(showSupernova, 8000);
-        setTimeout(showNebulaFormation, 10000);
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                depthTest: false
+            });
+
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            scene.add(particleSystem);
+
+            camera.position.z = 200;
+
+            // Post-processing
+            const composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 1.0;
+            bloomPass.radius = 0;
+            composer.addPass(bloomPass);
+
+            const fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+            fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+            composer.addPass(fxaaPass);
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                particleSystem.rotation.y += 0.001;
+                particleSystem.rotation.x += 0.0005;
+                composer.render();
+            }
+            animate();
+        };
     </script>
 </body>
 </html>
