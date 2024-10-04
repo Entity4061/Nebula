@@ -49,11 +49,12 @@
         const sizes = new Float32Array(particleCount);
 
         const colorStops = [
-            new THREE.Color(0xA9A9A9), // Dark Gray
+            new THREE.Color(0x2F4F4F), // Dark Slate Gray
+            new THREE.Color(0x696969), // Dim Gray
             new THREE.Color(0x708090), // Slate Gray
             new THREE.Color(0x4682B4), // Steel Blue
-            new THREE.Color(0x5F9EA0), // Cadet Blue
-            new THREE.Color(0xB0C4DE)  // Light Steel Blue
+            new THREE.Color(0x1E90FF), // Dodger Blue
+            new THREE.Color(0xFFFF00)  // Yellow
         ];
 
         function blendColors(color1, color2, ratio) {
@@ -65,8 +66,8 @@
 
         for (let i = 0; i < particleCount; i++) {
             const angle = Math.random() * 2 * Math.PI;
-            const radius = Math.random() * 50; // More compressed circle
-            const height = (Math.random() - 0.5) * 20;
+            const radius = Math.random() * 50; // Less wide
+            const height = (Math.random() - 0.5) * 100; // More height
 
             positions[i * 3] = radius * Math.cos(angle);
             positions[i * 3 + 1] = height;
@@ -105,9 +106,9 @@
         const particleSystem = new THREE.Points(particles, particleMaterial);
         scene.add(particleSystem);
 
-        // Bright sphere in the center
+        // Bright yellow sphere in the center
         const sphereGeometry = new THREE.SphereGeometry(20, 32, 32); // Bigger sphere
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 }); // Yellow color
         const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         scene.add(sphere);
 
