@@ -41,92 +41,94 @@
         directionalLight.position.set(5, 10, 7.5);
         scene.add(directionalLight);
 
-        // Load the image and create particles
-        const img = new Image();
-        img.src = 'https://upload.wikimedia.org/wikipedia/commons/a/a2/SN1994D.jpg';
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            context.drawImage(img, 0, 0, img.width, img.height);
+        // Particle system
+        const particleCount = 40000; // Increased particle count for higher density
+        const particles = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
 
-            const imageData = context.getImageData(0, 0, img.width, img.height);
-            const data = imageData.data;
+        const colorStops = [
+            new THREE.Color(0x00BFFF), // Sky Blue
+            new THREE.Color(0x0000FF), // Normal Blue
+            new THREE.Color(0xFF69B4), // Pink
+            new THREE.Color(0x800080), // Purple
+            new THREE.Color(0x4B0082)  // Dark Purple
+        ];
 
-            const particleCount = img.width * img.height;
-            const particles = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
+        function blendColors(color1, color2, ratio) {
+            const r = color1.r * (1 - ratio) + color2.r * ratio;
+            const g = color1.g * (1 - ratio) + color2.g * ratio;
+            const b = color1.b * (1 - ratio) + color2.b * ratio;
+            return new THREE.Color(r, g, b);
+        }
 
-            let index = 0;
-            for (let y = 0; y < img.height; y++) {
-                for (let x = 0; x < img.width; x++) {
-                    const i = (y * img.width + x) * 4;
-                    const r = data[i] / 255;
-                    const g = data[i + 1] / 255;
-                    const b = data[i + 2] / 255;
-                    const a = data[i + 3] / 255;
+        for (let i = 0; i < particleCount; i++) {
+            const layer = Math.floor(i / (particleCount / 5));
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = Math.random() * 50 + layer * 20;
+            let height;
 
-                    if (a > 0.5) { // Only use pixels with significant opacity
-                        positions[index * 3] = (x - img.width / 2) / 2;
-                        positions[index * 3 + 1] = (img.height / 2 - y) / 2;
-                        positions[index * 3 + 2] = 0;
+            // Irregular shell-like structure
+            height = (Math.sin(angle * 3 + layer) * 10 + Math.random() * 5) * (Math.random() > 0.5 ? 1 : -1);
 
-                        colors[index * 3] = r;
-                        colors[index * 3 + 1] = g;
-                        colors[index * 3 + 2] = b;
+            positions[i * 3] = radius * Math.cos(angle);
+            positions[i * 3 + 1] = height + layer * 20;
+            positions[i * 3 + 2] = radius * Math.sin(angle);
 
-                        sizes[index] = Math.random() * 1.5;
+            const ratio = i / particleCount;
+            const colorIndex = Math.floor(ratio * (colorStops.length - 1));
+            const colorRatio = (ratio * (colorStops.length - 1)) % 1;
+            const blendedColor = blendColors(colorStops[colorIndex], colorStops[colorIndex + 1], colorRatio);
 
-                        index++;
-                    }
-                }
-            }
+            colors[i * 3] = blendedColor.r;
+            colors[i * 3 + 1] = blendedColor.g;
+            colors[i * 3 + 2] = blendedColor.b;
 
-            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            sizes[i] = Math.random() * 1.5;
+        }
 
-            const particleMaterial = new THREE.PointsMaterial({
-                size: 1,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                blending: THREE.AdditiveBlending,
-                depthTest: false
-            });
+        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-            const particleSystem = new THREE.Points(particles, particleMaterial);
-            scene.add(particleSystem);
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9, // Increased opacity for more brightness
+            blending: THREE.AdditiveBlending,
+            depthTest: false
+        });
 
-            camera.position.z = 200;
+        const particleSystem = new THREE.Points(particles, particleMaterial);
+        scene.add(particleSystem);
 
-            // Post-processing
-            const composer = new THREE.EffectComposer(renderer);
-            composer.addPass(new THREE.RenderPass(scene, camera));
+        camera.position.z = 200;
 
-            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85);
-            bloomPass.threshold = 0;
-            bloomPass.strength = 1.0;
-            bloomPass.radius = 0;
-            composer.addPass(bloomPass);
+        // Post-processing
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
 
-            const fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-            fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-            composer.addPass(fxaaPass);
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85); // Further reduced bloom strength
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.0; // Further reduced bloom strength
+        bloomPass.radius = 0;
+        composer.addPass(bloomPass);
 
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
+        const fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+        fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+        composer.addPass(fxaaPass);
 
-                particleSystem.rotation.y += 0.001;
-                particleSystem.rotation.x += 0.0005;
-                composer.render();
-            }
-            animate();
-        };
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particleSystem.rotation.y += 0.001;
+            particleSystem.rotation.x += 0.0005;
+            composer.render();
+        }
+        animate();
     </script>
 </body>
 </html>
