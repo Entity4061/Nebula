@@ -105,7 +105,6 @@
 
         const particleSystem = new THREE.Points(particles, particleMaterial);
         scene.add(particleSystem);
-
         // Particle-based center of the supernova
         const centerParticleCount = 10000;
         const centerParticles = new THREE.BufferGeometry();
@@ -151,6 +150,39 @@
         const centerParticleSystem = new THREE.Points(centerParticles, centerParticleMaterial);
         scene.add(centerParticleSystem);
 
+        // Starry background
+        const starCount = 10000;
+        const stars = new THREE.BufferGeometry();
+        const starPositions = new Float32Array(starCount * 3);
+        const starColors = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i * 3] = (Math.random() - 0.5) * 2000;
+            starPositions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+            starPositions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+
+            const starColor = new THREE.Color(0x888888); // Grey color for stars
+            starColors[i * 3] = starColor.r;
+            starColors[i * 3 + 1] = starColor.g;
+            starColors[i * 3 + 2] = starColor.b;
+        }
+
+        stars.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        stars.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+        const starMaterial = new THREE.PointsMaterial({
+            size: 1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthTest: false,
+            map: particleTexture
+        });
+
+        const starSystem = new THREE.Points(stars, starMaterial);
+        scene.add(starSystem);
+
         camera.position.z = 300;
 
         // Post-processing
@@ -175,6 +207,7 @@
             particleSystem.rotation.x += 0.0005;
             centerParticleSystem.rotation.y += 0.001;
             centerParticleSystem.rotation.x += 0.0005;
+            starSystem.rotation.y += 0.0002;
             composer.render();
         }
         animate();
