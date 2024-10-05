@@ -49,12 +49,12 @@
         const sizes = new Float32Array(particleCount);
 
         const colorStops = [
+            new THREE.Color(0x1A1A1A), // Darker Gray
             new THREE.Color(0x2F4F4F), // Dark Slate Gray
             new THREE.Color(0x696969), // Dim Gray
             new THREE.Color(0x708090), // Slate Gray
             new THREE.Color(0x4682B4), // Steel Blue
-            new THREE.Color(0x1E90FF), // Dodger Blue
-            new THREE.Color(0xFFFF00)  // Yellow
+            new THREE.Color(0x1E90FF)  // Dodger Blue
         ];
 
         function blendColors(color1, color2, ratio) {
@@ -66,8 +66,8 @@
 
         for (let i = 0; i < particleCount; i++) {
             const angle = Math.random() * 2 * Math.PI;
-            const radius = Math.random() * 100; // Wider
-            const height = (Math.random() - 0.5) * 20; // Reduced height
+            const radius = Math.random() * 150; // Wider
+            const height = (Math.random() - 0.5) * 10; // Reduced height
 
             positions[i * 3] = radius * Math.cos(angle);
             positions[i * 3 + 1] = height;
@@ -106,13 +106,52 @@
         const particleSystem = new THREE.Points(particles, particleMaterial);
         scene.add(particleSystem);
 
-        // Bright yellow sphere in the center
-        const sphereGeometry = new THREE.SphereGeometry(20, 32, 32); // Bigger sphere
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 }); // Yellow color
-        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-        scene.add(sphere);
+        // Particle-based center of the supernova
+        const centerParticleCount = 10000;
+        const centerParticles = new THREE.BufferGeometry();
+        const centerPositions = new Float32Array(centerParticleCount * 3);
+        const centerColors = new Float32Array(centerParticleCount * 3);
+        const centerSizes = new Float32Array(centerParticleCount);
 
-        camera.position.z = 200;
+        for (let i = 0; i < centerParticleCount; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = Math.random() * 20; // Smaller radius for center
+            const height = (Math.random() - 0.5) * 5; // Smaller height for center
+
+            centerPositions[i * 3] = radius * Math.cos(angle);
+            centerPositions[i * 3 + 1] = height;
+            centerPositions[i * 3 + 2] = radius * Math.sin(angle);
+
+            const ratio = i / centerParticleCount;
+            const colorIndex = Math.floor(ratio * (colorStops.length - 1));
+            const colorRatio = (ratio * (colorStops.length - 1)) % 1;
+            const blendedColor = blendColors(colorStops[colorIndex], colorStops[colorIndex + 1], colorRatio);
+
+            centerColors[i * 3] = blendedColor.r;
+            centerColors[i * 3 + 1] = blendedColor.g;
+            centerColors[i * 3 + 2] = blendedColor.b;
+
+            centerSizes[i] = Math.random() * 1.5;
+        }
+
+        centerParticles.setAttribute('position', new THREE.BufferAttribute(centerPositions, 3));
+        centerParticles.setAttribute('color', new THREE.BufferAttribute(centerColors, 3));
+        centerParticles.setAttribute('size', new THREE.BufferAttribute(centerSizes, 1));
+
+        const centerParticleMaterial = new THREE.PointsMaterial({
+            size: 1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthTest: false,
+            map: particleTexture
+        });
+
+        const centerParticleSystem = new THREE.Points(centerParticles, centerParticleMaterial);
+        scene.add(centerParticleSystem);
+
+        camera.position.z = 300;
 
         // Post-processing
         const composer = new THREE.EffectComposer(renderer);
@@ -134,6 +173,8 @@
 
             particleSystem.rotation.y += 0.001;
             particleSystem.rotation.x += 0.0005;
+            centerParticleSystem.rotation.y += 0.001;
+            centerParticleSystem.rotation.x += 0.0005;
             composer.render();
         }
         animate();
